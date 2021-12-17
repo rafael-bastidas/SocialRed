@@ -17,6 +17,7 @@ import ProfileScreen from './screens/ProfileScreen';
 import RegisterScreen from './screens/RegisterScreen';
 import SearchScreen from './screens/SearchScreen';
 import ViewProfileScreen from './screens/ViewProfileScreen';
+import ComentarScreen from './screens/ComentarSreen';
 
 export default function App() {
   return (
@@ -48,6 +49,7 @@ const linkingConfiguration = {
       RegisterUser: 'register-user',
       EditProfile: 'edit-profile',
       ViewProfile: 'view-profile',
+      Comentar: 'view-comentar',
       NotFound: '*',
     },
   },
@@ -86,6 +88,13 @@ function RootNavigator() {
       }} />
       <Stack.Screen name="ViewProfile" component={ViewProfileScreen} options={{
         title: 'Vista perfil',
+        headerBackVisible: true,
+        headerTintColor: '#fff',
+        headerTitleStyle: { fontWeight: 'bold', },
+        headerStyle: { backgroundColor: 'rgba(32, 137, 220, 1)' }
+      }} />
+      <Stack.Screen name="Comentar" component={ComentarScreen} options={{
+        title: 'Comentario',
         headerBackVisible: true,
         headerTintColor: '#fff',
         headerTitleStyle: { fontWeight: 'bold', },
@@ -137,6 +146,7 @@ function RootNavigator() {
        <BottomTab.Screen
          name="TabProfile"
          component={ProfileScreen}
+         initialParams={true}
          options={(props) => ({
            title: 'Perfil',
            headerTintColor: '#fff',

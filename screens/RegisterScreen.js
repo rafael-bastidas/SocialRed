@@ -1,23 +1,21 @@
 import * as React from 'react';
-import { StyleSheet, ScrollView, Text, View } from 'react-native';
-import { Input, Button } from 'react-native-elements';
-
+import { StyleSheet, ScrollView, Text, View, ActivityIndicator, ImageBackground } from 'react-native';
+import { Input, Button, Overlay } from 'react-native-elements';
 import { registerUser } from '../database/firebase';
-import { storeDataString } from '../database/LocalStorage';
+import { dataRegister } from '../database/DatosInit'
+import { widthDim } from './DimensionesLayout'
+import { storeDataObject } from "../database/LocalStorage";
 
 export default function RegisterScreen(props) {
 
-    const [state, setState] = React.useState({
-        name: '',
-        gender: '',
-        location: '',
-        birthday: '',
-        user: '',
-        password: '',
-        repit_password: ''
-    });
+    const image = { uri: "https://rafaelbastidas.com/apis/api-music/media/bg-1.png" };
 
-    const [flatLoader, setFlatLoader] = React.useState(false);
+    const [state, setState] = React.useState(dataRegister);
+
+    const [loader, setLoader] = React.useState({ visible: false, text: 'Cargando...', Backdrop: true, visibleLoad: false });
+    function handleToggleOverlay() {
+        if (loader.Backdrop) setLoader({ ...loader, visible: !loader.visible })
+    }
 
     const handleChangeText = (name, value) => {
         setState({ ...state, [name]: value })
@@ -32,80 +30,124 @@ export default function RegisterScreen(props) {
         return array;
     }
 
-    const registrarUsuario = async () => {
-        if (state.name !== '' && state.user !== '' && state.password !== '' && state.password === state.repit_password) {
-            setFlatLoader(true);
-            let id_user = await registerUser({ ...state, image: '', array_user: configurarArrayUser() });
+    async function registrarUsuario() {
+        if (state.name !== '' && state.user !== '' && state.password !== '') {
+            setLoader({ visible: true, text: 'Cargando...', Backdrop: false, visibleLoad: true });
+            let id_user = await registerUser({ ...state, user: state.user.toLocaleLowerCase(), array_user: configurarArrayUser() });
             console.log("id_user", id_user);
             if (id_user !== 'undefined' && id_user !== 'user-registered') {
-                alert("Usuario Registrado");
-                await storeDataString('id_user', id_user);
+                /* alert("Usuario Registrado"); */
+                /* await storeDataString('id_user', id_user); */
+                await storeDataObject('user_origin', { id: id_user, user: state.user.toLocaleLowerCase() });
                 props.navigation.navigate('Root');
             } else if (id_user === 'user-registered') {
-                alert("El nombre de usuario ya existe");
+                setLoader({ visible: true, text: 'El usuario ya existe', Backdrop: true, visibleLoad: false });
             } else if (id_user === 'undefined') {
-                alert("Usuario no registrado");
+                setLoader({ visible: true, text: 'Usuario no registrado', Backdrop: true, visibleLoad: false });
+            } else {
+                setLoader({ ...loader, visible: false });
             }
-            setFlatLoader(false);
-        } else {
 
+        } else {
+            setLoader({ visible: true, text: 'Los campos nombre, usuario y contraseña son obligatorios', Backdrop: true, visibleLoad: false });
         }
     }
 
     return (
         <ScrollView>
-                <View style={styles.container}>
-                    <Text style={styles.title}>Datos personales:</Text>
+            <View >
+                <ImageBackground source={image} resizeMode="cover" style={styles.container}>
+                <Text style={styles.title}>DATOS PERSONALES:</Text>
 
-                    <Input placeholder='Nombre completo'
-                        leftIcon={{ type: 'font-awesome', name: 'user' }}
-                        value={state.name}
-                        onChangeText={value => handleChangeText('name', value)} />
-                    <Input placeholder='Genero'
-                        leftIcon={{ color:'#154570', type: 'font-awesome', name: 'transgender-alt' }}
-                        value={state.gender}
-                        onChangeText={value => handleChangeText('gender', value)} />
-                    <Input placeholder='Dirección de habitación'
-                        leftIcon={{ color:'#154570', type: 'Entypo', name: 'location-pin' }}
-                        value={state.location}
-                        onChangeText={value => handleChangeText('location', value)} />
-                    <Input placeholder='Fecha de nacimiento'
-                        leftIcon={{ color:'#154570', type: 'font-awesome', name: 'birthday-cake' }}
-                        value={state.birthday}
-                        onChangeText={value => handleChangeText('birthday', value)} />
-                    <Input placeholder='Bio'
-                        leftIcon={{ color:'#154570', type: 'Ant-Design', name: 'profile' }}
-                        value={state.bio}
-                        onChangeText={value => handleChangeText('bio', value)} />
+        <View style={{backgroundColor:'rgba(254, 254, 254, 0.8)', marginTop:15, borderRadius: 5}}>
+                <Input
+                    labelStyle={{ color: '#0084c8', marginLeft: 15 }}
+                    label={'Nombre completo:'}
+                    leftIcon={{ color: '#154570', type: 'font-awesome', name: 'user' }}
+                    inputStyle={{ color: '#005c94', marginLeft: 15 }}
+                    value={state.name}
+                    onChangeText={value => handleChangeText('name', value)} />
+                <Input
+                    labelStyle={{ color: '#0084c8', marginLeft: 15 }}
+                    label={'Genero:'}
+                    leftIcon={{ color: '#154570', type: 'font-awesome', name: 'transgender-alt' }}
+                    inputStyle={{ color: '#005c94', marginLeft: 15 }}
+                    value={state.gender}
+                    onChangeText={value => handleChangeText('gender', value)} />
+                <Input
+                    labelStyle={{ color: '#0084c8', marginLeft: 15 }}
+                    label={'Dirección:'}
+                    leftIcon={{ color: '#154570', type: 'Entypo', name: 'location-pin' }}
+                    inputStyle={{ color: '#005c94', marginLeft: 15 }}
+                    value={state.location}
+                    onChangeText={value => handleChangeText('location', value)} />
+                <Input
+                    labelStyle={{ color: '#0084c8', marginLeft: 15 }}
+                    label={'Fecha de nacimiento:'}
+                    leftIcon={{ color: '#154570', type: 'font-awesome', name: 'birthday-cake' }}
+                    inputStyle={{ color: '#005c94', marginLeft: 15 }}
+                    value={state.birthday}
+                    onChangeText={value => handleChangeText('birthday', value)} />
+                <Input
+                    labelStyle={{ color: '#0084c8', marginLeft: 15 }}
+                    label={'Biografia:'}
+                    leftIcon={{ color: '#154570', type: 'Ant-Design', name: 'info-outline' }}
+                    inputStyle={{ color: '#005c94', marginLeft: 15 }}
+                    value={state.bio}
+                    onChangeText={value => handleChangeText('bio', value)} />
+            </View>
 
-                    <Text style={styles.title}>Datos de inicio de sesion:</Text>
-
-                    <Input placeholder='Usuario'
-                        leftIcon={{ color:'#154570', type: 'font-awesome', name: 'user' }}
-                        value={state.user}
-                        onChangeText={value => handleChangeText('user', value)} />
-                    <Input placeholder='Contraseña'
-                        leftIcon={{ color:'#154570', type: 'font-awesome', name: 'lock' }}
-                        value={state.password}
-                        onChangeText={value => handleChangeText('password', value)} />
-                    <Input placeholder='Reperir contraseña'
-                        leftIcon={{ color:'#154570', type: 'font-awesome', name: 'lock' }}
-                        onChangeText={value => handleChangeText('repit_password', value)} />
-
-                    <Button title="Registrarme"
-                        type="outline"
-                        titleStyle={{ color: '#fff' }}
-                        containerStyle={{marginVertical:20, backgroundColor: 'rgba(38, 144, 19, 1)'}}
-                        onPress={() => registrarUsuario()} />
+                <Text style={styles.title}>DATOS DE INICIO DE SESION:</Text>
+                <View style={{backgroundColor:'rgba(254, 254, 254, 0.8)', marginTop:15, borderRadius: 5}}>
+                <Input
+                    labelStyle={{ color: '#0084c8', marginLeft: 15 }}
+                    label={'Usuario:'}
+                    leftIcon={{ color: '#154570', type: 'font-awesome', name: 'user' }}
+                    inputStyle={{ color: '#005c94', marginLeft: 15 }}
+                    value={state.user}
+                    onChangeText={value => handleChangeText('user', value)} />
+                <Input
+                    labelStyle={{ color: '#0084c8', marginLeft: 15 }}
+                    label={'Contraseña:'}
+                    leftIcon={{ color: '#154570', type: 'font-awesome', name: 'lock' }}
+                    inputStyle={{ color: '#005c94', marginLeft: 15 }}
+                    value={state.password}
+                    onChangeText={value => handleChangeText('password', value)}
+                    secureTextEntry={true} />
                 </View>
-            </ScrollView>
+
+                <Button title="Registrarme"
+                    type="outline"
+                    titleStyle={{ color: '#fff' }}
+                    containerStyle={{ marginVertical: 20, backgroundColor: '#EC4B5F', borderRadius:8 }}
+                    onPress={() => registrarUsuario()} />
+
+                <Overlay isVisible={loader.visible} onBackdropPress={() => handleToggleOverlay()}>
+                    {(() => {
+                        if (loader.visibleLoad) {
+                            return (
+                                <View style={{ width: widthDim - 100, alignItems: 'center' }}>
+                                    <ActivityIndicator color="#154570" size="large" />
+                                    <Text>{loader.text}</Text>
+                                </View>)
+                        } else {
+                            return (
+                                <View style={{ width: widthDim - 100, alignItems: 'center' }}>
+                                    <Text>{loader.text}</Text>
+                                </View>)
+                        }
+                    })()}
+                </Overlay>
+                </ImageBackground>
+            </View>
+        </ScrollView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: 'rgba(181, 226, 213, 1)',
+        backgroundColor: '#9eabb0ff',
         paddingHorizontal: 15,
     },
     title: {
@@ -113,6 +155,8 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         marginTop: 15,
-        color:'#338960'
+        color: '#171B24',
+        backgroundColor: '#FFBB50',
+        borderRadius: 8
     },
 });

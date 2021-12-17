@@ -1,32 +1,35 @@
 import * as React from 'react';
-import { StyleSheet, ScrollView, ActivityIndicator, Text, View } from 'react-native';
-
-import { Input, Button } from 'react-native-elements';
-
+import { SafeAreaView, StyleSheet, ScrollView, ActivityIndicator, Text, View } from 'react-native';
+import { Input, Button, Overlay } from 'react-native-elements';
+import { widthDim } from './DimensionesLayout'
 import { editUser, getUserById } from '../database/firebase';
-import { getDataString } from '../database/LocalStorage';
+import { getDataObject } from '../database/LocalStorage';
+import { dataRegister } from '../database/DatosInit'
 
 export default function EditProfileScreen(props) {
 
-    React.useEffect(() => {
+    let userOrigin = { id: "", user: "" };
+    React.useEffect(async () => {
+        userOrigin = await getDataObject('user_origin');
         initView();
         console.log("getinitView-EditProfile");
     }, []);
 
-    const [userProfile, setUserProfile] = React.useState({
-        id: "",
-        profile,
-    });
+    const [loader, setLoader] = React.useState({ visible: false, text: 'Cargando...', Backdrop: true, visibleLoad:false });
+    function handleToggleOverlay() {
+        if (loader.Backdrop) setLoader({ ...loader, visible: !loader.visible })
+    }
+
+    const [userProfile, setUserProfile] = React.useState({ id: "", profile: {} });
 
     const [state, setState] = React.useState({
-        bio: '',
         name: '',
         gender: '',
         location: '',
         birthday: '',
+        bio:'',
         user: '',
-        password: '',
-        repit_password: ''
+        password: ''
     });
 
     const handleChangeText = (name, value) => {
@@ -34,20 +37,16 @@ export default function EditProfileScreen(props) {
     }
 
     const editarUsuario = async () => {
-        if (state.name !== '' && state.user !== '' && state.password !== '' && state.password === state.repit_password) {
+        if (state.name !== '' && state.user !== '' && state.password !== '') {
             await editUser(state, userProfile.id);
-            console.log("Se guardo");
-            props.navigation.navigate('Root', { screen: 'TabProfile' });
+            props.navigation.navigate('Root', { screen: 'TabProfile' }, { flatUpdateBio: true });
         } else {
-            console.log("Complete toda la informacion");
+            setLoader({ visible: true, text: 'Los campos nombre y contraseña son obligatorios', Backdrop: true, visibleLoad: false });
         }
     }
 
-    async function getIdUser() { return await getDataString('id_user'); }
     async function initView() {
-        let idUser;
-        try { idUser = await getIdUser(); } catch (error) { idUser = "" }
-
+        let idUser = userOrigin.id;
         let profileUser = await getUserById(idUser);
         setUserProfile({ id: idUser, profile: profileUser });
         setState({
@@ -66,58 +65,75 @@ export default function EditProfileScreen(props) {
 
     if (state.name === '') {
         return (
-            <View style={{ flex: 1, justifyContent: 'center' }}>
-                <ActivityIndicator size="large" />
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <Text>Cargando...</Text>
             </View>
         );
     } else {
         return (
-            <ScrollView>
-                <View style={styles.container}>
-                    <Text style={styles.title}>Datos personales:</Text>
+            <SafeAreaView style={{ flex: 1, backgroundColor: 'rgba(181, 226, 213, 1)' }}>
+                <ScrollView>
+                    <View style={styles.container}>
+                        <Text style={styles.title}>Datos personales:</Text>
 
-                    <Input placeholder='Nombre completo'
-                        leftIcon={{ color:'#154570', type: 'font-awesome', name: 'user' }}
-                        value={state.name}
-                        onChangeText={value => handleChangeText('name', value)} />
-                    <Input placeholder='Genero'
-                        leftIcon={{ color:'#154570', type: 'font-awesome', name: 'transgender-alt' }}
-                        value={state.gender}
-                        onChangeText={value => handleChangeText('gender', value)} />
-                    <Input placeholder='Dirección de habitación'
-                        leftIcon={{ color:'#154570', type: 'Entypo', name: 'location-pin' }}
-                        value={state.location}
-                        onChangeText={value => handleChangeText('location', value)} />
-                    <Input placeholder='Fecha de nacimiento'
-                        leftIcon={{ color:'#154570', type: 'font-awesome', name: 'birthday-cake' }}
-                        value={state.birthday}
-                        onChangeText={value => handleChangeText('birthday', value)} />
-                    <Input placeholder='Bio'
-                        leftIcon={{ color:'#154570', type: 'Ant-Design', name: 'profile' }}
-                        value={state.bio}
-                        onChangeText={value => handleChangeText('bio', value)} />
+                        <Input placeholder='Nombre completo'
+                            leftIcon={{ color: '#154570', type: 'font-awesome', name: 'user' }}
+                            value={state.name}
+                            onChangeText={value => handleChangeText('name', value)} />
+                        <Input placeholder='Genero'
+                            leftIcon={{ color: '#154570', type: 'font-awesome', name: 'transgender-alt' }}
+                            value={state.gender}
+                            onChangeText={value => handleChangeText('gender', value)} />
+                        <Input placeholder='Dirección de habitación'
+                            leftIcon={{ color: '#154570', type: 'Entypo', name: 'location-pin' }}
+                            value={state.location}
+                            onChangeText={value => handleChangeText('location', value)} />
+                        <Input placeholder='Fecha de nacimiento'
+                            leftIcon={{ color: '#154570', type: 'font-awesome', name: 'birthday-cake' }}
+                            value={state.birthday}
+                            onChangeText={value => handleChangeText('birthday', value)} />
+                        <Input placeholder='Bio'
+                            leftIcon={{ color: '#154570', name: 'info-outline' }}
+                            value={state.bio}
+                            onChangeText={value => handleChangeText('bio', value)} />
 
-                    <Text style={styles.title}>Datos de inicio de sesion:</Text>
+                        <Text style={styles.title}>Datos de inicio de sesion:</Text>
 
-                    <Input placeholder='Usuario'
-                        leftIcon={{ color:'#154570', type: 'font-awesome', name: 'user' }}
-                        value={state.user}
-                        onChangeText={value => handleChangeText('user', value)} />
-                    <Input placeholder='Contraseña'
-                        leftIcon={{ color:'#154570', type: 'font-awesome', name: 'lock' }}
-                        value={state.password}
-                        onChangeText={value => handleChangeText('password', value)} />
-                    <Input placeholder='Reperir contraseña'
-                        leftIcon={{ color:'#154570', type: 'font-awesome', name: 'lock' }}
-                        onChangeText={value => handleChangeText('repit_password', value)} />
+                        <Input placeholder='Usuario'
+                            disabled
+                            leftIcon={{ color: '#154570', type: 'font-awesome', name: 'user' }}
+                            value={state.user}
+                            onChangeText={value => handleChangeText('user', value)} />
+                        <Input placeholder='Contraseña'
+                            leftIcon={{ color: '#154570', type: 'font-awesome', name: 'lock' }}
+                            value={state.password}
+                            onChangeText={value => handleChangeText('password', value)} />
 
-                    <Button title="Guardar cambios"
-                        type="outline"
-                        titleStyle={{ color: '#fff' }}
-                        style={{marginVertical:'20px', backgroundColor: 'rgba(38, 144, 19, 1)'}}
-                        onPress={() => editarUsuario()} />
-                </View>
-            </ScrollView>
+                        <Button title="Guardar cambios"
+                            type="outline"
+                            titleStyle={{ color: '#fff' }}
+                            containerStyle={{ marginVertical: 20, backgroundColor: 'rgba(38, 144, 19, 1)' }}
+                            onPress={() => editarUsuario()} />
+
+                        <Overlay isVisible={loader.visible} onBackdropPress={() => handleToggleOverlay()}>
+                            {(() => {
+                                if (loader.visibleLoad) {
+                                    return (
+                                        <View style={{ width: widthDim - 100, alignItems: 'center' }}>
+                                            <ActivityIndicator color="#154570" size="large" />
+                                            <Text>{loader.text}</Text>
+                                        </View>)
+                                } else {
+                                    return (
+                                        <View style={{ width: widthDim - 100, alignItems: 'center' }}>
+                                            <Text>{loader.text}</Text>
+                                        </View>)
+                                }
+                            })()}
+                        </Overlay>
+                    </View>
+                </ScrollView>
+            </SafeAreaView>
         );
     }
 }
@@ -126,14 +142,14 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: 'rgba(181, 226, 213, 1)',
-        paddingHorizontal: '15px',
+        paddingHorizontal: 15,
     },
     title: {
         fontSize: 20,
         fontWeight: 'bold',
         textAlign: 'center',
-        marginTop: '15px',
-        color:'#338960'
+        marginTop: 15,
+        color: '#338960'
     },
     separator: {
         marginVertical: 30,

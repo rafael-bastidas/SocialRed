@@ -1,14 +1,20 @@
 import * as React from 'react';
-import { StyleSheet, ImageBackground, Text, View } from 'react-native';
-import { Input, Button, Card } from 'react-native-elements';
+import { StyleSheet, ImageBackground, Text, View, ActivityIndicator } from 'react-native';
+import { Input, Button, Card, Overlay } from 'react-native-elements';
+import { widthDim } from './DimensionesLayout'
 
 import { validUser } from '../database/firebase';
-import { storeDataString, getDataString, storeDataObject } from '../database/LocalStorage';
+import { getDataObject, storeDataObject } from '../database/LocalStorage';
 
 
 export default function InitSessionScreen(props) {
 
-  const image = { uri: "https://cdn.pixabay.com/photo/2014/02/17/13/52/heart-268151_960_720.jpg" };
+  const image = { uri: "https://rafaelbastidas.com/apis/api-music/media/image_fondo.png" };
+
+  const [loader, setLoader] = React.useState({ visible: false, text: 'Cargando...', Backdrop: true, visibleLoad: false });
+  function handleToggleOverlay() {
+    if (loader.Backdrop) setLoader({ ...loader, visible: !loader.visible })
+  }
 
   const [state, setState] = React.useState({
     user: '',
@@ -21,20 +27,20 @@ export default function InitSessionScreen(props) {
   }
 
   const validarUsuario = async () => {
+    setLoader({ visible: true, text: 'Verificando...', Backdrop: false, visibleLoad: true });
     let array_resp = await validUser(state.user, state.password);
     //console.log(array_resp);
     if (array_resp.length === 1) {
-      alert("Usuario validado");
-      await storeDataString('id_user', array_resp[0].id);
-      await storeDataObject('user_origin', { id: array_resp[0].id, user: array_resp[0].user });
+      await storeDataObject('user_origin', { id: array_resp[0].id, user: state.user });
+      setLoader({ ...loader, visible: false });
       props.navigation.navigate('Root', { screen: 'TabProfile' });
     } else {
-      alert("Usuario no registrado");
+      setLoader({ visible: true, text: 'Usuario no registrado', Backdrop: true, visibleLoad: false });
     }
   }
 
   const params_id_user = async () => {
-    const params = await getDataString('id_user');
+    const params = await getDataObject('user_origin');
     if (params !== 'undefined') {
       props.navigation.navigate('Root', { screen: 'TabProfile' });
     }
@@ -47,26 +53,45 @@ export default function InitSessionScreen(props) {
   return (
     <View style={styles.container}>
       <ImageBackground source={image} resizeMode="cover" style={styles.imageBackground}>
-        <Card containerStyle={{ backgroundColor: 'rgba(255, 255, 255, .8)' }}>
+        <Card containerStyle={{ backgroundColor: 'rgba(255, 255, 255, .8)', borderRadius: 8 }}>
           {
             <View style={{ backgroundColor: 'rgba(255, 255, 255, .5)' }}>
               <Text style={styles.title}>Inicio de sesion</Text>
               <View style={styles.separator} />
-              <Input placeholder='Usuario' leftIcon={{ color:'#154570', type: 'font-awesome', name: 'user' }}
+              <Input placeholder='Usuario' leftIcon={{ color: '#154570', type: 'font-awesome', name: 'user' }}
                 onChangeText={value => handleChangeText('user', value)} />
-              <Input placeholder='Contraseña' leftIcon={{ color:'#154570', type: 'font-awesome', name: 'lock' }}
-                onChangeText={value => handleChangeText('password', value)} />
+              <Input placeholder='Contraseña' leftIcon={{ color: '#154570', type: 'font-awesome', name: 'lock' }}
+                onChangeText={value => handleChangeText('password', value)}
+                secureTextEntry={true} />
               <Button
-                containerStyle={{ marginTop: 10, backgroundColor:'rgba(38, 144, 19, 1)' }}
+                containerStyle={{ marginTop: 10, backgroundColor: '#EC4B5F', borderRadius: 8 }}
                 title="Ingresar"
-                titleStyle={{color:'#fff'}}
+                titleStyle={{ color: '#fff' }}
                 type="outline"
                 onPress={() => validarUsuario()} />
               <View style={styles.separator} />
-              <Button title="Quiero registrarme" onPress={() => props.navigation.navigate('RegisterUser')} />
+              <Button title="Quiero registrarme"
+                onPress={() => props.navigation.navigate('RegisterUser')}
+                style={{ borderRadius: 8, backgroundColor: '#154570' }} />
             </View>
           }
         </Card>
+        <Overlay isVisible={loader.visible} onBackdropPress={() => handleToggleOverlay()}>
+          {(() => {
+            if (loader.visibleLoad) {
+              return (
+                <View style={{ width: widthDim - 100, alignItems: 'center' }}>
+                  <ActivityIndicator color="#154570" size="large" />
+                  <Text>{loader.text}</Text>
+                </View>)
+            } else {
+              return (
+                <View style={{ width: widthDim - 100, alignItems: 'center' }}>
+                  <Text>{loader.text}</Text>
+                </View>)
+            }
+          })()}
+        </Overlay>
       </ImageBackground>
     </View>
   );
@@ -84,11 +109,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: 'rgba(38, 144, 19, 1)',
+    color: '#FFBB50'
   },
   separator: {
     marginVertical: 30,
     height: 1,
-    width: '80%',
+    /* width: '80%', */
   },
 });
